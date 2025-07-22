@@ -2,7 +2,63 @@ const bcrypt = require("bcrypt");
 const UserModel = require("../models/userModel");
 const Jwt = require("jsonwebtoken");
 
-// ... (fungsi registerUser) ...
+// --- PASTIKAN SEMUA FUNGSI DEKLARASI DULU, BARU EXPORT DI BAWAH ---
+
+const registerUser = async (request, h) => {
+  const { name, phone_number, email, password } = request.payload;
+
+  try {
+    const existingUserByEmail = await UserModel.findByEmail(email);
+    if (existingUserByEmail) {
+      return h
+        .response({
+          status: "fail",
+          message: "Email already registered",
+        })
+        .code(409);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await UserModel.create(
+      name,
+      phone_number,
+      email,
+      hashedPassword
+    );
+
+    if (!newUser) {
+      throw new Error("Failed to create new user in database.");
+    }
+
+    return h
+      .response({
+        status: "success",
+        message: "User registered successfully",
+        data: {
+          userId: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+        },
+      })
+      .code(201);
+  } catch (error) {
+    console.error("Error registering user:", error);
+    if (error.code === "23505") {
+      return h
+        .response({
+          status: "fail",
+          message: "Phone number or email already registered",
+        })
+        .code(409);
+    }
+    return h
+      .response({
+        status: "error",
+        message: "Failed to register user",
+      })
+      .code(500);
+  }
+};
 
 const loginUser = async (request, h) => {
   const { email, password } = request.payload;
@@ -31,7 +87,7 @@ const loginUser = async (request, h) => {
     const tokenPayload = {
       id: user.id,
       email: user.email,
-      name: user.name, // Pastikan nama ada di sini
+      name: user.name,
     };
 
     const token = Jwt.sign(tokenPayload, process.env.JWT_SECRET, {
@@ -59,12 +115,11 @@ const loginUser = async (request, h) => {
   }
 };
 
-// --- FUNGSI INI HARUS ADA ---
 const getUserProfile = async (request, h) => {
   try {
-    const userId = request.auth.credentials.id; // Ambil ID dari token
+    const userId = request.auth.credentials.id;
 
-    const user = await UserModel.findById(userId); // Ambil data lengkap dari database
+    const user = await UserModel.findById(userId);
 
     if (!user) {
       return h
@@ -83,9 +138,9 @@ const getUserProfile = async (request, h) => {
           userId: user.id,
           name: user.name,
           email: user.email,
-          phone_number: user.phone_number, // Gunakan phone_number, bukan phoneNumber
-          created_at: user.created_at, // Gunakan created_at, bukan createdAt
-          updated_at: user.updated_at, // Gunakan updated_at, bukan updatedAt
+          phone_number: user.phone_number,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
         },
       })
       .code(200);
@@ -100,8 +155,58 @@ const getUserProfile = async (request, h) => {
   }
 };
 
+const updateUserName = async (request, h) => {
+  const userId = request.auth.credentials.id;
+  const { name } = request.payload;
+
+  try {
+    if (!name || name.trim() === "") {
+      return h
+        .response({
+          status: "fail",
+          message: "Name cannot be empty.",
+        })
+        .code(400);
+    }
+
+    const success = await UserModel.updateName(userId, name);
+
+    if (!success) {
+      return h
+        .response({
+          status: "fail",
+          message: "User not found or unable to update name.",
+        })
+        .code(404);
+    }
+
+    return h
+      .response({
+        status: "success",
+        message: "User name updated successfully",
+        data: {
+          userId,
+          newName: name,
+        },
+      })
+      .code(200);
+  } catch (error) {
+    console.error("Error updating user name:", error);
+    return h
+      .response({
+        status: "error",
+        message: "Failed to update user name.",
+      })
+      .code(500);
+  }
+};
+
+// --- BAGIAN EXPORT INI HARUS DI PALING BAWAH SETELAH SEMUA FUNGSI DEKLARASI ---
 module.exports = {
   registerUser,
   loginUser,
-  getUserProfile, // Pastikan ini diekspor!
+  getUserProfile,
+  sendMessage, // Pastikan Anda juga mengekspor sendMessage jika itu ada di file ini
+  getMessages, // Pastikan Anda juga mengekspor getMessages jika itu ada di file ini
+  updateUserName, // Tambahkan ini jika Anda mengimplementasikan updateUserName
 };
