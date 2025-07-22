@@ -1,4 +1,3 @@
-// src/routes/userRoutes.js
 const Joi = require("@hapi/joi");
 const userHandler = require("../handlers/userHandler");
 
@@ -35,13 +34,13 @@ const userRoutes = [
       },
     },
   },
-  // --- PASTIKAN RUTE INI ADA ---
+  // --- RUTE GET USER PROFILE INI HARUS ADA ---
   {
     method: "GET",
     path: "/users/profile", // Pastikan path ini benar
-    handler: userHandler.getUserProfile, // Pastikan handler ini benar
+    handler: userHandler.getUserProfile, // Pastikan handler ini ada di userHandler.js
     options: {
-      auth: "jwt", // Pastikan ini ada
+      auth: "jwt", // Rute ini memerlukan autentikasi JWT
     },
   },
 ];
