@@ -1,3 +1,4 @@
+// src/routes/userRoutes.js
 const Joi = require("@hapi/joi");
 const userHandler = require("../handlers/userHandler");
 
@@ -7,7 +8,7 @@ const userRoutes = [
     path: "/users/register",
     handler: userHandler.registerUser,
     options: {
-      auth: false, // Penting: tidak memerlukan autentikasi
+      auth: false,
       validate: {
         payload: Joi.object({
           name: Joi.string().min(3).max(255).required(),
@@ -25,7 +26,7 @@ const userRoutes = [
     path: "/users/login",
     handler: userHandler.loginUser,
     options: {
-      auth: false, // Penting: tidak memerlukan autentikasi
+      auth: false,
       validate: {
         payload: Joi.object({
           email: Joi.string().email().required(),
@@ -34,12 +35,13 @@ const userRoutes = [
       },
     },
   },
+  // --- PASTIKAN RUTE INI ADA ---
   {
     method: "GET",
-    path: "/users/profile",
-    handler: userHandler.getUserProfile,
+    path: "/users/profile", // Pastikan path ini benar
+    handler: userHandler.getUserProfile, // Pastikan handler ini benar
     options: {
-      auth: "jwt", // Rute ini memerlukan autentikasi JWT
+      auth: "jwt", // Pastikan ini ada
     },
   },
 ];
