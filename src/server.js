@@ -1,3 +1,5 @@
+// src/server.js
+
 const Hapi = require("@hapi/hapi");
 const Jwt = require("@hapi/jwt");
 const userRoutes = require("./routes/userRoutes");
@@ -7,7 +9,7 @@ require("dotenv").config();
 const init = async () => {
   const server = Hapi.server({
     port: process.env.PORT || 3000,
-    host: process.env.NODE_ENV !== "production" ? "0.0.0.0" : "0.0.0.0", // '0.0.0.0' untuk Vercel
+    host: process.env.NODE_ENV !== "production" ? "0.0.0.0" : "0.0.0.0",
     routes: {
       cors: {
         origin: ["*"],
@@ -17,8 +19,10 @@ const init = async () => {
 
   await server.register(Jwt);
 
+  // --- PERUBAHAN KRUSIAL DI SINI ---
   server.auth.strategy("jwt", "jwt", {
-    secret: process.env.JWT_SECRET, // <--- PERUBAHAN DI SINI: dari 'keys' menjadi 'secret'
+    keys: process.env.JWT_SECRET, // <--- KEMBALI MENGGUNAKAN 'keys'
+    // Tapi pastikan nilai ini adalah string langsung dari .env
     verify: {
       aud: false,
       iss: false,
