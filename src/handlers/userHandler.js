@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt");
 const UserModel = require("../models/userModel");
 
 const registerUser = async (request, h) => {
-  const { phone_number, email, password } = request.payload;
+  const { name, phone_number, email, password } = request.payload; // Ambil 'name' dari payload
 
   try {
     const existingUserByEmail = await UserModel.findByEmail(email);
@@ -16,7 +16,13 @@ const registerUser = async (request, h) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await UserModel.create(phone_number, email, hashedPassword);
+    // Panggil UserModel.create dengan 'name'
+    const newUser = await UserModel.create(
+      name,
+      phone_number,
+      email,
+      hashedPassword
+    );
 
     if (!newUser) {
       throw new Error("Failed to create new user in database.");
@@ -28,6 +34,7 @@ const registerUser = async (request, h) => {
         message: "User registered successfully",
         data: {
           userId: newUser.id,
+          name: newUser.name, // Kirim kembali nama di respons
           email: newUser.email,
         },
       })
@@ -75,14 +82,13 @@ const loginUser = async (request, h) => {
         .code(401);
     }
 
-    // --- Di sini adalah bagian di mana token akan dibuat jika JWT diimplementasikan ---
-    // Untuk saat ini, kita hanya mengembalikan pesan sukses
     return h
       .response({
         status: "success",
         message: "Login successful",
         data: {
-          userId: user.id, // ID user yang login
+          userId: user.id,
+          name: user.name, // Kirim juga nama user saat login
           email: user.email,
         },
       })

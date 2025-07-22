@@ -7,9 +7,9 @@ const userRoutes = [
     path: "/users/register",
     handler: userHandler.registerUser,
     options: {
-      // auth: false, // Tidak perlu secara eksplisit diset, karena tidak ada auth default
       validate: {
         payload: Joi.object({
+          name: Joi.string().min(3).max(255).required(), // Tambah validasi untuk 'name'
           phone_number: Joi.string()
             .pattern(/^\+?[0-9]{10,15}$/)
             .required(),
@@ -24,7 +24,6 @@ const userRoutes = [
     path: "/users/login",
     handler: userHandler.loginUser,
     options: {
-      // auth: false, // Tidak perlu secara eksplisit diset
       validate: {
         payload: Joi.object({
           email: Joi.string().email().required(),

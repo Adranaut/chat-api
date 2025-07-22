@@ -1,10 +1,11 @@
 const db = require("../utils/db");
 
 class UserModel {
-  static async create(phoneNumber, email, hashedPassword) {
+  static async create(name, phoneNumber, email, hashedPassword) {
+    // Tambah 'name' di parameter
     try {
-      const query = `INSERT INTO users (phone_number, email, password) VALUES ($1, $2, $3) RETURNING id, phone_number, email, created_at`;
-      const values = [phoneNumber, email, hashedPassword];
+      const query = `INSERT INTO users (name, phone_number, email, password) VALUES ($1, $2, $3, $4) RETURNING id, name, phone_number, email, created_at`; // Tambah 'name' di query
+      const values = [name, phoneNumber, email, hashedPassword]; // Tambah 'name' di values
       const result = await db.query(query, values);
       return result.rows[0] || null;
     } catch (error) {
@@ -15,7 +16,8 @@ class UserModel {
 
   static async findByEmail(email) {
     try {
-      const query = `SELECT id, phone_number, email, password FROM users WHERE email = $1`;
+      // Tambah 'name' di SELECT
+      const query = `SELECT id, name, phone_number, email, password FROM users WHERE email = $1`;
       const result = await db.query(query, [email]);
       return result.rows[0] || null;
     } catch (error) {
@@ -26,7 +28,8 @@ class UserModel {
 
   static async findById(id) {
     try {
-      const query = `SELECT id, phone_number, email FROM users WHERE id = $1`;
+      // Tambah 'name' di SELECT
+      const query = `SELECT id, name, phone_number, email FROM users WHERE id = $1`;
       const result = await db.query(query, [id]);
       return result.rows[0] || null;
     } catch (error) {
