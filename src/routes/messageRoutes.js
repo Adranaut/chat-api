@@ -1,16 +1,16 @@
+// src/routes/messageRoutes.js
 const Joi = require("@hapi/joi");
-const messageHandler = require("../handlers/messageHandler");
+const messageHandler = require("../handlers/messageHandler"); // Pastikan ini diimpor
 
 const messageRoutes = [
   {
     method: "POST",
     path: "/messages",
-    handler: messageHandler.sendMessage,
+    handler: messageHandler.sendMessage, // Menggunakan handler dari messageHandler.js
     options: {
-      auth: "jwt", // Rute ini memerlukan autentikasi JWT
+      auth: "jwt",
       validate: {
         payload: Joi.object({
-          // senderId tidak lagi dikirim di payload, akan diambil dari token
           receiverId: Joi.string().required(),
           content: Joi.string().required(),
         }),
@@ -19,13 +19,13 @@ const messageRoutes = [
   },
   {
     method: "GET",
-    path: "/messages/{userId}", // Menggunakan path parameter untuk ID user lawan bicara
-    handler: messageHandler.getMessages,
+    path: "/messages/{userId}",
+    handler: messageHandler.getMessages, // Menggunakan handler dari messageHandler.js
     options: {
-      auth: "jwt", // Rute ini memerlukan autentikasi JWT
+      auth: "jwt",
       validate: {
         params: Joi.object({
-          userId: Joi.string().required(), // Validasi path parameter
+          userId: Joi.string().required(),
         }),
       },
     },
