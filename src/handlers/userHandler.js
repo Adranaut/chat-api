@@ -1,8 +1,9 @@
 const bcrypt = require("bcrypt");
 const UserModel = require("../models/userModel");
+const Jwt = require("jsonwebtoken"); // Import jsonwebtoken untuk membuat token
 
 const registerUser = async (request, h) => {
-  const { name, phone_number, email, password } = request.payload; // Ambil 'name' dari payload
+  const { name, phone_number, email, password } = request.payload;
 
   try {
     const existingUserByEmail = await UserModel.findByEmail(email);
@@ -16,7 +17,6 @@ const registerUser = async (request, h) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    // Panggil UserModel.create dengan 'name'
     const newUser = await UserModel.create(
       name,
       phone_number,
@@ -34,7 +34,7 @@ const registerUser = async (request, h) => {
         message: "User registered successfully",
         data: {
           userId: newUser.id,
-          name: newUser.name, // Kirim kembali nama di respons
+          name: newUser.name,
           email: newUser.email,
         },
       })
@@ -82,14 +82,29 @@ const loginUser = async (request, h) => {
         .code(401);
     }
 
+    // --- Buat JWT Token ---
+    // Payload token: data yang ingin Anda sertakan (id, email, nama user)
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      name: user.name, // Sertakan nama di payload token
+    };
+
+    const token = Jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET, // Kunci rahasia dari .env
+      {
+        expiresIn: "4h", // Token berlaku selama 4 jam (bisa disesuaikan)
+        algorithm: "HS256", // Algoritma penandatanganan
+      }
+    );
+
     return h
       .response({
         status: "success",
         message: "Login successful",
         data: {
-          userId: user.id,
-          name: user.name, // Kirim juga nama user saat login
-          email: user.email,
+          token, // Kirim token kembali ke klien
         },
       })
       .code(200);
@@ -104,7 +119,21 @@ const loginUser = async (request, h) => {
   }
 };
 
+// Tambahkan handler untuk mendapatkan profil user, yang membutuhkan autentikasi
+const getUserProfile = async (request, h) => {
+  // request.auth.credentials akan berisi payload dari token yang valid
+  // yang didefinisikan di server.auth.strategy
+  return h
+    .response({
+      status: "success",
+      message: "User profile retrieved successfully",
+      data: request.auth.credentials, // Mengandung id, email, dan nama
+    })
+    .code(200);
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  getUserProfile, // Export handler baru
 };

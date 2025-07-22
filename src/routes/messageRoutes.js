@@ -7,9 +7,10 @@ const messageRoutes = [
     path: "/messages",
     handler: messageHandler.sendMessage,
     options: {
+      auth: "jwt", // Rute ini memerlukan autentikasi JWT
       validate: {
         payload: Joi.object({
-          senderId: Joi.string().required(), // Diperlukan karena tidak ada autentikasi otomatis
+          // senderId tidak lagi dikirim di payload, akan diambil dari token
           receiverId: Joi.string().required(),
           content: Joi.string().required(),
         }),
@@ -18,13 +19,13 @@ const messageRoutes = [
   },
   {
     method: "GET",
-    path: "/messages", // Menggunakan query params untuk user1Id dan user2Id
+    path: "/messages/{userId}", // Menggunakan path parameter untuk ID user lawan bicara
     handler: messageHandler.getMessages,
     options: {
+      auth: "jwt", // Rute ini memerlukan autentikasi JWT
       validate: {
-        query: Joi.object({
-          user1Id: Joi.string().required(),
-          user2Id: Joi.string().required(),
+        params: Joi.object({
+          userId: Joi.string().required(), // Validasi path parameter
         }),
       },
     },

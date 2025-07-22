@@ -7,9 +7,10 @@ const userRoutes = [
     path: "/users/register",
     handler: userHandler.registerUser,
     options: {
+      auth: false, // Penting: tidak memerlukan autentikasi
       validate: {
         payload: Joi.object({
-          name: Joi.string().min(3).max(255).required(), // Tambah validasi untuk 'name'
+          name: Joi.string().min(3).max(255).required(),
           phone_number: Joi.string()
             .pattern(/^\+?[0-9]{10,15}$/)
             .required(),
@@ -24,12 +25,21 @@ const userRoutes = [
     path: "/users/login",
     handler: userHandler.loginUser,
     options: {
+      auth: false, // Penting: tidak memerlukan autentikasi
       validate: {
         payload: Joi.object({
           email: Joi.string().email().required(),
           password: Joi.string().required(),
         }),
       },
+    },
+  },
+  {
+    method: "GET",
+    path: "/users/profile",
+    handler: userHandler.getUserProfile,
+    options: {
+      auth: "jwt", // Rute ini memerlukan autentikasi JWT
     },
   },
 ];

@@ -1,9 +1,10 @@
 const encryption = require("../utils/encryption");
 const MessageModel = require("../models/messageModel");
-const UserModel = require("../models/userModel"); // Mungkin diperlukan untuk validasi receiverId
+const UserModel = require("../models/userModel");
 
 const sendMessage = async (request, h) => {
-  const { senderId, receiverId, content } = request.payload; // senderId harus dikirim dari client atau didapat dari sesi
+  const { receiverId, content } = request.payload;
+  const senderId = request.auth.credentials.id; // Ambil senderId dari payload JWT
 
   try {
     const receiverExists = await UserModel.findById(receiverId);
@@ -44,19 +45,24 @@ const sendMessage = async (request, h) => {
 };
 
 const getMessages = async (request, h) => {
-  const { user1Id, user2Id } = request.query; // Ambil ID user dari query params, atau dari path params
-
-  if (!user1Id || !user2Id) {
-    return h
-      .response({
-        status: "fail",
-        message: "user1Id and user2Id are required to fetch messages.",
-      })
-      .code(400);
-  }
+  const { userId: targetUserId } = request.params; // Ambil ID user lawan bicara dari path params
+  const currentUserId = request.auth.credentials.id; // Ambil ID user yang sedang login dari payload JWT
 
   try {
-    const messages = await MessageModel.getConversation(user1Id, user2Id);
+    const targetUserExists = await UserModel.findById(targetUserId);
+    if (!targetUserExists) {
+      return h
+        .response({
+          status: "fail",
+          message: "Target user for conversation not found",
+        })
+        .code(404);
+    }
+
+    const messages = await MessageModel.getConversation(
+      currentUserId,
+      targetUserId
+    );
 
     const decryptedMessages = messages.map((msg) => ({
       id: msg.id,
