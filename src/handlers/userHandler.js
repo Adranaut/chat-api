@@ -206,7 +206,5 @@ module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
-  sendMessage, // Pastikan Anda juga mengekspor sendMessage jika itu ada di file ini
-  getMessages, // Pastikan Anda juga mengekspor getMessages jika itu ada di file ini
   updateUserName, // Tambahkan ini jika Anda mengimplementasikan updateUserName
 };
