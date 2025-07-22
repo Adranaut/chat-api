@@ -63,7 +63,8 @@ const loginUser = async (request, h) => {
   const { email, password } = request.payload;
 
   try {
-    const user = await UserModel.findByEmail(email); // findByEmail masih mengembalikan password
+    // PERUBAHAN DI SINI: Panggil findByEmailForAuth
+    const user = await UserModel.findByEmailForAuth(email);
     if (!user) {
       return h
         .response({
@@ -116,22 +117,27 @@ const loginUser = async (request, h) => {
 
 const getUserProfile = async (request, h) => {
   try {
-    const userId = request.auth.credentials.id;
-    const user = await UserModel.findById(userId); // findById tidak mengembalikan password
+    // Ambil EMAIL pengguna dari kredensial token yang sudah divalidasi
+    const userEmail = request.auth.credentials.email; // <--- PERUBAHAN DI SINI
+
+    // Ambil data user lengkap dari database menggunakan EMAIL (bukan ID)
+    const user = await UserModel.findByEmail(userEmail); // <--- PERUBAHAN DI SINI
 
     if (!user) {
+      // Ini seharusnya sangat jarang terjadi jika token valid dan email ada di DB
       return h
         .response({
           status: "fail",
-          message: "User not found.",
+          message: "User profile not found in database for this email.",
         })
         .code(404);
     }
 
+    // Kembalikan data user lengkap (tanpa password)
     return h
       .response({
         status: "success",
-        message: "User profile retrieved successfully",
+        message: "User profile retrieved successfully (via email lookup)",
         data: {
           userId: user.id,
           name: user.name,
@@ -143,11 +149,11 @@ const getUserProfile = async (request, h) => {
       })
       .code(200);
   } catch (error) {
-    console.error("Error retrieving user profile:", error);
+    console.error("Error retrieving user profile (via email):", error);
     return h
       .response({
         status: "error",
-        message: "Failed to retrieve user profile.",
+        message: "Failed to retrieve user profile (via email).",
       })
       .code(500);
   }
