@@ -1,6 +1,7 @@
+// src/handlers/messageHandler.js
 const encryption = require("../utils/encryption");
 const MessageModel = require("../models/messageModel");
-const UserModel = require("../models/userModel");
+const UserModel = require("../models/userModel"); // Mungkin diperlukan untuk validasi receiverId
 
 const sendMessage = async (request, h) => {
   const { receiverId, content } = request.payload;
@@ -69,7 +70,7 @@ const getMessages = async (request, h) => {
       senderId: msg.sender_id,
       receiverId: msg.receiver_id,
       content: encryption.decrypt(msg.encrypted_content),
-      createdAt: msg.created_at,
+      created_at: msg.created_at,
     }));
 
     return h

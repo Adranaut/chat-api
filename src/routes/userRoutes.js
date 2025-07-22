@@ -34,13 +34,25 @@ const userRoutes = [
       },
     },
   },
-  // --- RUTE GET USER PROFILE INI HARUS ADA ---
   {
     method: "GET",
-    path: "/users/profile", // Pastikan path ini benar
-    handler: userHandler.getUserProfile, // Pastikan handler ini ada di userHandler.js
+    path: "/users/profile",
+    handler: userHandler.getUserProfile,
     options: {
-      auth: "jwt", // Rute ini memerlukan autentikasi JWT
+      auth: "jwt",
+    },
+  },
+  {
+    method: "PUT",
+    path: "/users/name",
+    handler: userHandler.updateUserName,
+    options: {
+      auth: "jwt",
+      validate: {
+        payload: Joi.object({
+          name: Joi.string().min(3).max(255).required(),
+        }),
+      },
     },
   },
 ];

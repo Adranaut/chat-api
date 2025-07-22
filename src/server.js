@@ -1,5 +1,5 @@
 const Hapi = require("@hapi/hapi");
-const Jwt = require("@hapi/jwt"); // Pastikan ini di-import
+const Jwt = require("@hapi/jwt");
 const userRoutes = require("./routes/userRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 require("dotenv").config();
@@ -7,19 +7,18 @@ require("dotenv").config();
 const init = async () => {
   const server = Hapi.server({
     port: process.env.PORT || 3000,
-    host: process.env.NODE_ENV !== "production" ? "localhost" : "0.0.0.0",
+    host: process.env.NODE_ENV !== "production" ? "0.0.0.0" : "0.0.0.0", // '0.0.0.0' untuk Vercel
     routes: {
       cors: {
-        origin: ["*"], // Sesuaikan dengan origin aplikasi Android Anda
+        origin: ["*"],
       },
     },
   });
 
-  // --- PASTIKAN BAGIAN INI ADA DAN URUTANNYA BENAR ---
-  await server.register(Jwt); // Mendaftarkan plugin JWT
+  await server.register(Jwt);
 
   server.auth.strategy("jwt", "jwt", {
-    keys: process.env.JWT_SECRET,
+    secret: process.env.JWT_SECRET, // <--- PERUBAHAN DI SINI: dari 'keys' menjadi 'secret'
     verify: {
       aud: false,
       iss: false,
@@ -33,7 +32,7 @@ const init = async () => {
       const credentials = {
         id: artifacts.decoded.id,
         email: artifacts.decoded.email,
-        name: artifacts.decoded.name, // Pastikan 'name' ada di payload token saat login
+        name: artifacts.decoded.name,
       };
       return {
         isValid: true,
@@ -42,18 +41,16 @@ const init = async () => {
     },
   });
 
-  server.auth.default("jwt"); // Mengatur strategi 'jwt' sebagai default
+  server.auth.default("jwt");
 
-  // --- PASTIKAN DAFTAR RUTE DI SINI ---
   server.route(userRoutes);
   server.route(messageRoutes);
 
-  // Rute dasar tanpa autentikasi
   server.route({
     method: "GET",
     path: "/",
     options: {
-      auth: false, // Rute ini tidak memerlukan autentikasi
+      auth: false,
     },
     handler: (request, h) => {
       return "Chat API is running!";

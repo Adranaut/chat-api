@@ -2,8 +2,7 @@ const bcrypt = require("bcrypt");
 const UserModel = require("../models/userModel");
 const Jwt = require("jsonwebtoken");
 
-// --- PASTIKAN SEMUA FUNGSI DEKLARASI DULU, BARU EXPORT DI BAWAH ---
-
+// --- PASTIKAN SEMUA DEKLARASI FUNGSI DI SINI ---
 const registerUser = async (request, h) => {
   const { name, phone_number, email, password } = request.payload;
 
@@ -64,7 +63,7 @@ const loginUser = async (request, h) => {
   const { email, password } = request.payload;
 
   try {
-    const user = await UserModel.findByEmail(email);
+    const user = await UserModel.findByEmail(email); // findByEmail masih mengembalikan password
     if (!user) {
       return h
         .response({
@@ -118,8 +117,7 @@ const loginUser = async (request, h) => {
 const getUserProfile = async (request, h) => {
   try {
     const userId = request.auth.credentials.id;
-
-    const user = await UserModel.findById(userId);
+    const user = await UserModel.findById(userId); // findById tidak mengembalikan password
 
     if (!user) {
       return h
@@ -201,10 +199,11 @@ const updateUserName = async (request, h) => {
   }
 };
 
-// --- BAGIAN EXPORT INI HARUS DI PALING BAWAH SETELAH SEMUA FUNGSI DEKLARASI ---
+// --- PASTIKAN BAGIAN EXPORT INI DI PALING BAWAH ---
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
-  updateUserName, // Tambahkan ini jika Anda mengimplementasikan updateUserName
+  updateUserName,
+  // HAPUS "sendMessage," dan "getMessages," dari sini jika mereka di messageHandler.js
 };
