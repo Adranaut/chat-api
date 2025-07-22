@@ -1,13 +1,12 @@
 const bcrypt = require("bcrypt");
 const UserModel = require("../models/userModel");
-const Jwt = require("jsonwebtoken");
+// const Jwt = require('jsonwebtoken'); // Hapus import Jwt
 
-// --- PASTIKAN SEMUA DEKLARASI FUNGSI DI SINI ---
 const registerUser = async (request, h) => {
   const { name, phone_number, email, password } = request.payload;
 
   try {
-    const existingUserByEmail = await UserModel.findByEmail(email);
+    const existingUserByEmail = await UserModel.findByEmailForAuth(email); // Menggunakan findByEmailForAuth
     if (existingUserByEmail) {
       return h
         .response({
@@ -63,8 +62,7 @@ const loginUser = async (request, h) => {
   const { email, password } = request.payload;
 
   try {
-    // PERUBAHAN DI SINI: Panggil findByEmailForAuth
-    const user = await UserModel.findByEmailForAuth(email);
+    const user = await UserModel.findByEmailForAuth(email); // Menggunakan findByEmailForAuth
     if (!user) {
       return h
         .response({
@@ -84,23 +82,20 @@ const loginUser = async (request, h) => {
         .code(401);
     }
 
-    const tokenPayload = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-    };
+    // --- HAPUS BAGIAN PEMBUATAN TOKEN JWT ---
+    // const tokenPayload = { ... };
+    // const token = Jwt.sign(...);
 
-    const token = Jwt.sign(tokenPayload, process.env.JWT_SECRET, {
-      expiresIn: "4h",
-      algorithm: "HS256",
-    });
-
+    // Mengembalikan detail user langsung (tanpa token)
     return h
       .response({
         status: "success",
         message: "Login successful",
         data: {
-          token,
+          userId: user.id,
+          name: user.name,
+          email: user.email,
+          phone_number: user.phone_number, // Sertakan phone_number juga
         },
       })
       .code(200);
@@ -116,28 +111,27 @@ const loginUser = async (request, h) => {
 };
 
 const getUserProfile = async (request, h) => {
-  try {
-    // Ambil EMAIL pengguna dari kredensial token yang sudah divalidasi
-    const userEmail = request.auth.credentials.email; // <--- PERUBAHAN DI SINI
+  // Dengan tidak adanya JWT, kita TIDAK BISA mendapatkan ID/Email dari token.
+  // Anda harus mengirimkan ID user di path parameter atau query parameter.
+  // Asumsi: Kita akan mengambil ID dari path params.
+  const { userId } = request.params; // Ambil ID dari path params, misal /users/profile/some-id
 
-    // Ambil data user lengkap dari database menggunakan EMAIL (bukan ID)
-    const user = await UserModel.findByEmail(userEmail); // <--- PERUBAHAN DI SINI
+  try {
+    const user = await UserModel.findById(userId); // Menggunakan findById
 
     if (!user) {
-      // Ini seharusnya sangat jarang terjadi jika token valid dan email ada di DB
       return h
         .response({
           status: "fail",
-          message: "User profile not found in database for this email.",
+          message: "User not found.",
         })
         .code(404);
     }
 
-    // Kembalikan data user lengkap (tanpa password)
     return h
       .response({
         status: "success",
-        message: "User profile retrieved successfully (via email lookup)",
+        message: "User profile retrieved successfully",
         data: {
           userId: user.id,
           name: user.name,
@@ -149,18 +143,20 @@ const getUserProfile = async (request, h) => {
       })
       .code(200);
   } catch (error) {
-    console.error("Error retrieving user profile (via email):", error);
+    console.error("Error retrieving user profile:", error);
     return h
       .response({
         status: "error",
-        message: "Failed to retrieve user profile (via email).",
+        message: "Failed to retrieve user profile.",
       })
       .code(500);
   }
 };
 
 const updateUserName = async (request, h) => {
-  const userId = request.auth.credentials.id;
+  // Dengan tidak adanya JWT, Anda harus mengirim ID user yang akan diupdate
+  // Asumsi: ID user ada di path params
+  const { userId } = request.params; // Ambil ID dari path params, misal /users/name/some-id
   const { name } = request.payload;
 
   try {
@@ -205,11 +201,9 @@ const updateUserName = async (request, h) => {
   }
 };
 
-// --- PASTIKAN BAGIAN EXPORT INI DI PALING BAWAH ---
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
   updateUserName,
-  // HAPUS "sendMessage," dan "getMessages," dari sini jika mereka di messageHandler.js
 };

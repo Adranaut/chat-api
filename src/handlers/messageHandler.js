@@ -1,13 +1,22 @@
-// src/handlers/messageHandler.js
 const encryption = require("../utils/encryption");
 const MessageModel = require("../models/messageModel");
-const UserModel = require("../models/userModel"); // Mungkin diperlukan untuk validasi receiverId
+const UserModel = require("../models/userModel");
 
 const sendMessage = async (request, h) => {
-  const { receiverId, content } = request.payload;
-  const senderId = request.auth.credentials.id; // Ambil senderId dari payload JWT
+  // --- PERUBAHAN DI SINI: senderId harus dikirim dari payload ---
+  const { senderId, receiverId, content } = request.payload;
 
   try {
+    const senderExists = await UserModel.findById(senderId); // Tambahkan validasi senderId
+    if (!senderExists) {
+      return h
+        .response({
+          status: "fail",
+          message: "Sender user not found",
+        })
+        .code(404);
+    }
+
     const receiverExists = await UserModel.findById(receiverId);
     if (!receiverExists) {
       return h
@@ -46,24 +55,30 @@ const sendMessage = async (request, h) => {
 };
 
 const getMessages = async (request, h) => {
-  const { userId: targetUserId } = request.params; // Ambil ID user lawan bicara dari path params
-  const currentUserId = request.auth.credentials.id; // Ambil ID user yang sedang login dari payload JWT
+  // --- PERUBAHAN DI SINI: Ambil kedua ID dari path params ---
+  const { user1Id, user2Id } = request.params; // Misal: /messages/user1_id/user2_id
 
   try {
-    const targetUserExists = await UserModel.findById(targetUserId);
-    if (!targetUserExists) {
+    const user1Exists = await UserModel.findById(user1Id);
+    if (!user1Exists) {
       return h
         .response({
           status: "fail",
-          message: "Target user for conversation not found",
+          message: "User 1 not found",
+        })
+        .code(404);
+    }
+    const user2Exists = await UserModel.findById(user2Id);
+    if (!user2Exists) {
+      return h
+        .response({
+          status: "fail",
+          message: "User 2 not found",
         })
         .code(404);
     }
 
-    const messages = await MessageModel.getConversation(
-      currentUserId,
-      targetUserId
-    );
+    const messages = await MessageModel.getConversation(user1Id, user2Id);
 
     const decryptedMessages = messages.map((msg) => ({
       id: msg.id,

@@ -1,5 +1,3 @@
-// src/models/userModel.js
-
 const db = require("../utils/db");
 
 class UserModel {
@@ -17,7 +15,6 @@ class UserModel {
 
   // Fungsi ini akan digunakan untuk login (memerlukan password)
   static async findByEmailForAuth(email) {
-    // Ubah nama fungsi ini
     try {
       const query = `SELECT id, name, phone_number, email, password FROM users WHERE email = $1`;
       const result = await db.query(query, [email]);
@@ -28,13 +25,12 @@ class UserModel {
     }
   }
 
-  // Fungsi baru/diubah ini akan digunakan untuk mendapatkan profil (tanpa password)
+  // Fungsi ini akan digunakan untuk mendapatkan profil (tanpa password)
   static async findByEmail(email) {
-    // Ini adalah fungsi yang akan dipanggil dari getUserProfile
     try {
       const query = `SELECT id, name, phone_number, email, created_at, updated_at FROM users WHERE email = $1`;
       const result = await db.query(query, [email]);
-      return result.rows[0] || null; // <--- TIDAK MENGEMBALIKAN PASSWORD
+      return result.rows[0] || null;
     } catch (error) {
       console.error("Error finding user by email:", error);
       throw error;
