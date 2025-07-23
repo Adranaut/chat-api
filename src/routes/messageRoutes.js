@@ -7,10 +7,9 @@ const messageRoutes = [
     path: "/messages",
     handler: messageHandler.sendMessage,
     options: {
-      // auth: 'jwt', // HAPUS OPSI AUTH INI
       validate: {
         payload: Joi.object({
-          senderId: Joi.string().required(), // PERLU dikirim karena tidak ada token
+          senderId: Joi.string().required(),
           receiverId: Joi.string().required(),
           content: Joi.string().required(),
         }),
@@ -19,15 +18,19 @@ const messageRoutes = [
   },
   {
     method: "GET",
-    path: "/messages/{user1Id}/{user2Id}", // <--- PERUBAHAN DI SINI: path params untuk kedua ID
+    path: "/messages/{user1Id}/{user2Id}",
     handler: messageHandler.getMessages,
     options: {
-      // auth: 'jwt', // HAPUS OPSI AUTH INI
       validate: {
         params: Joi.object({
           user1Id: Joi.string().required(),
           user2Id: Joi.string().required(),
         }),
+        query: Joi.object({
+          // <--- TAMBAHAN UNTUK PAGINASI
+          limit: Joi.number().integer().min(1).default(20), // Default 20 pesan per halaman
+          offset: Joi.number().integer().min(0).default(0), // Default mulai dari 0 (halaman pertama)
+        }).options({ allowUnknown: true }), // Izinkan query params lain jika ada
       },
     },
   },

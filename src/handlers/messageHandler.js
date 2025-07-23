@@ -1,9 +1,8 @@
 const encryption = require("../utils/encryption");
 const MessageModel = require("../models/messageModel");
 const UserModel = require("../models/userModel");
-const pusher = require("../utils/pusher"); // Import objek Pusher yang sudah diinisialisasi
+const pusher = require("../utils/pusher");
 
-// --- DEFINISI FUNGSI sendMessage ---
 const sendMessage = async (request, h) => {
   const { senderId, receiverId, content } = request.payload;
 
@@ -76,9 +75,9 @@ const sendMessage = async (request, h) => {
   }
 };
 
-// --- DEFINISI FUNGSI getMessages ---
 const getMessages = async (request, h) => {
   const { user1Id, user2Id } = request.params;
+  const { limit, offset } = request.query; // <--- TAMBAHAN UNTUK PAGINASI
 
   try {
     const user1Exists = await UserModel.findById(user1Id);
@@ -100,7 +99,13 @@ const getMessages = async (request, h) => {
         .code(404);
     }
 
-    const messages = await MessageModel.getConversation(user1Id, user2Id);
+    // Panggil model dengan limit dan offset
+    const { messages, total } = await MessageModel.getConversation(
+      user1Id,
+      user2Id,
+      limit,
+      offset
+    ); // <--- PERUBAHAN DI SINI
 
     const decryptedMessages = messages.map((msg) => ({
       id: msg.id,
@@ -115,6 +120,20 @@ const getMessages = async (request, h) => {
         status: "success",
         data: {
           messages: decryptedMessages,
+          pagination: {
+            // <--- TAMBAHAN UNTUK INFORMASI PAGINASI
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            totalMessages: parseInt(total),
+            nextOffset:
+              parseInt(offset) + decryptedMessages.length < parseInt(total)
+                ? parseInt(offset) + decryptedMessages.length
+                : null,
+            prevOffset:
+              parseInt(offset) - parseInt(limit) >= 0
+                ? parseInt(offset) - parseInt(limit)
+                : null,
+          },
         },
       })
       .code(200);
@@ -129,7 +148,6 @@ const getMessages = async (request, h) => {
   }
 };
 
-// --- PASTIKAN BAGIAN EXPORT INI DI PALING BAWAH SETELAH SEMUA FUNGSI DEKLARASI ---
 module.exports = {
   sendMessage,
   getMessages,
