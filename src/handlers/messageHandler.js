@@ -1,9 +1,9 @@
-// src/handlers/messageHandler.js
 const encryption = require("../utils/encryption");
 const MessageModel = require("../models/messageModel");
 const UserModel = require("../models/userModel");
 const pusher = require("../utils/pusher"); // Import objek Pusher yang sudah diinisialisasi
 
+// --- DEFINISI FUNGSI sendMessage ---
 const sendMessage = async (request, h) => {
   const { senderId, receiverId, content } = request.payload;
 
@@ -35,31 +35,26 @@ const sendMessage = async (request, h) => {
       encryptedContent
     );
 
-    // --- Tambahan Kode untuk Pusher ---
     if (newMessage) {
-      const decryptedContent = encryption.decrypt(newMessage.encrypted_content); // Dekripsi untuk dikirim via Pusher
+      const decryptedContent = encryption.decrypt(newMessage.encrypted_content);
       const messageData = {
         id: newMessage.id,
         senderId: newMessage.sender_id,
         receiverId: newMessage.receiver_id,
-        content: decryptedContent, // Kirim pesan yang sudah didekripsi
+        content: decryptedContent,
         createdAt: newMessage.created_at,
       };
 
-      // Tentukan channel. Contoh: 'private-chat-SENDERID-RECEIVERID'
-      // Untuk percakapan 1-ke-1, channel harus konsisten antara kedua pihak.
-      // Bisa diurutkan ID untuk konsistensi: `chat-${[senderId, receiverId].sort().join('-')}`
       const channelName = `private-chat-${[senderId, receiverId]
         .sort()
         .join("-")}`;
-      const eventName = "new-message"; // Nama event
+      const eventName = "new-message";
 
       await pusher.trigger(channelName, eventName, messageData);
       console.log(
         `Pusher event '${eventName}' triggered on channel '${channelName}'`
       );
     }
-    // --- Akhir Tambahan Kode Pusher ---
 
     return h
       .response({
@@ -81,8 +76,60 @@ const sendMessage = async (request, h) => {
   }
 };
 
-// ... (getMessages) ...
+// --- DEFINISI FUNGSI getMessages ---
+const getMessages = async (request, h) => {
+  const { user1Id, user2Id } = request.params;
 
+  try {
+    const user1Exists = await UserModel.findById(user1Id);
+    if (!user1Exists) {
+      return h
+        .response({
+          status: "fail",
+          message: "User 1 not found",
+        })
+        .code(404);
+    }
+    const user2Exists = await UserModel.findById(user2Id);
+    if (!user2Exists) {
+      return h
+        .response({
+          status: "fail",
+          message: "User 2 not found",
+        })
+        .code(404);
+    }
+
+    const messages = await MessageModel.getConversation(user1Id, user2Id);
+
+    const decryptedMessages = messages.map((msg) => ({
+      id: msg.id,
+      senderId: msg.sender_id,
+      receiverId: msg.receiver_id,
+      content: encryption.decrypt(msg.encrypted_content),
+      created_at: msg.created_at,
+    }));
+
+    return h
+      .response({
+        status: "success",
+        data: {
+          messages: decryptedMessages,
+        },
+      })
+      .code(200);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    return h
+      .response({
+        status: "error",
+        message: "Failed to retrieve messages",
+      })
+      .code(500);
+  }
+};
+
+// --- PASTIKAN BAGIAN EXPORT INI DI PALING BAWAH SETELAH SEMUA FUNGSI DEKLARASI ---
 module.exports = {
   sendMessage,
   getMessages,
