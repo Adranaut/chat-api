@@ -1,9 +1,12 @@
+// src/models/messageModel.js
+
 const db = require("../utils/db");
 
 class MessageModel {
   static async create(senderId, receiverId, encryptedContent) {
     try {
-      const query = `INSERT INTO messages (sender_id, receiver_id, encrypted_content) VALUES ($1, $2, $3) RETURNING id, sender_id, receiver_id, created_at`;
+      // --- PERUBAHAN DI SINI: Tambahkan 'encrypted_content' ke RETURNING ---
+      const query = `INSERT INTO messages (sender_id, receiver_id, encrypted_content) VALUES ($1, $2, $3) RETURNING id, sender_id, receiver_id, encrypted_content, created_at`;
       const values = [senderId, receiverId, encryptedContent];
       const result = await db.query(query, values);
       return result.rows[0] || null;
