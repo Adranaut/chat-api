@@ -16,20 +16,19 @@ const init = async () => {
     },
   });
 
-  // Daftarkan rute-rute aplikasi Anda
   server.route(userRoutes);
   server.route(messageRoutes);
 
-  // --- RUTE BARU UNTUK AUTENTIKASI PUSHER DITAMBAHKAN DI SINI ---
   server.route({
     method: "POST",
     path: "/pusher/auth",
     handler: async (request, h) => {
       const socketId = request.payload.socket_id;
       const channelName = request.payload.channel_name;
-      const userId = request.payload.userId; // Client mengirimkan ini setelah login
+      const userId = request.payload.userId; // <--- PASTIKAN INI DITERIMA DARI FRONTEND
 
       if (!userId) {
+        // Ini akan menyebabkan 401 jika userId tidak ada
         return h
           .response({
             status: "fail",
@@ -43,6 +42,7 @@ const init = async () => {
       if (channelParts[0] === "private" && channelParts[1] === "chat") {
         const participant1 = channelParts[2];
         const participant2 = channelParts[3];
+        // Ini akan menyebabkan 403 jika userId tidak cocok
         if (userId !== participant1 && userId !== participant2) {
           return h
             .response({
@@ -52,6 +52,7 @@ const init = async () => {
             .code(403);
         }
       } else {
+        // Ini akan menyebabkan 403 jika channel type tidak didukung
         return h
           .response({ status: "fail", message: "Unsupported channel type." })
           .code(403);
@@ -73,11 +74,10 @@ const init = async () => {
       }
     },
     options: {
-      auth: false, // Tidak memerlukan autentikasi JWT untuk endpoint ini
+      auth: false,
     },
   });
 
-  // Rute dasar (tetap tanpa autentikasi)
   server.route({
     method: "GET",
     path: "/",
