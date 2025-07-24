@@ -35,23 +35,26 @@ const sendMessage = async (request, h) => {
     );
 
     let formattedCreatedAt = null;
+    // Perbaikan: Validasi dan format created_at dari database secara eksplisit
     if (newMessage && newMessage.created_at) {
-      const dateObj = new Date(newMessage.created_at);
-      if (!isNaN(dateObj.getTime())) {
-        // Check if date is valid
-        formattedCreatedAt = dateObj.toISOString();
+      const dateFromDb = new Date(newMessage.created_at);
+      if (!isNaN(dateFromDb.getTime())) {
+        // Periksa apakah tanggal valid
+        formattedCreatedAt = dateFromDb.toISOString();
       } else {
-        // Fallback if created_at from DB is somehow invalid
-        console.warn(
-          "Invalid created_at from DB for new message:",
+        // Fallback jika timestamp dari DB tidak valid
+        console.error(
+          "CRITICAL: Invalid created_at from DB for new message (using fallback):",
           newMessage.created_at
         );
-        formattedCreatedAt = new Date().toISOString(); // Use current time as fallback
+        formattedCreatedAt = new Date().toISOString(); // Gunakan waktu saat ini sebagai fallback
       }
     } else {
-      // Fallback if created_at is missing from DB response
-      console.warn("Missing created_at from DB for new message.");
-      formattedCreatedAt = new Date().toISOString(); // Use current time as fallback
+      // Fallback jika created_at hilang dari respons DB (seharusnya tidak terjadi dengan RETURNING)
+      console.error(
+        "CRITICAL: Missing created_at from DB for new message (using fallback)."
+      );
+      formattedCreatedAt = new Date().toISOString(); // Gunakan waktu saat ini sebagai fallback
     }
 
     if (newMessage) {
@@ -61,7 +64,7 @@ const sendMessage = async (request, h) => {
         senderId: newMessage.sender_id,
         receiverId: newMessage.receiver_id,
         content: decryptedContent,
-        createdAt: formattedCreatedAt, // Use the validated/formatted timestamp
+        createdAt: formattedCreatedAt, // Gunakan timestamp yang sudah divalidasi/diforrmat
       };
 
       // Gunakan underscore untuk menggabungkan ID agar tidak terpecah oleh UUID
@@ -82,7 +85,7 @@ const sendMessage = async (request, h) => {
         message: "Message sent successfully",
         data: {
           messageId: newMessage.id,
-          createdAt: formattedCreatedAt, // Use the validated/formatted timestamp in API response
+          createdAt: formattedCreatedAt, // Gunakan timestamp yang sudah divalidasi/diforrmat di respons API
         },
       })
       .code(201);
@@ -130,20 +133,23 @@ const getMessages = async (request, h) => {
 
     const decryptedMessages = messages.map((msg) => {
       let formattedCreatedAt = null;
+      // Perbaikan: Validasi dan format created_at dari database secara eksplisit untuk pesan historis
       if (msg.created_at) {
-        const dateObj = new Date(msg.created_at);
-        if (!isNaN(dateObj.getTime())) {
-          // Check if date is valid
-          formattedCreatedAt = dateObj.toISOString();
+        const dateFromDb = new Date(msg.created_at);
+        if (!isNaN(dateFromDb.getTime())) {
+          // Periksa apakah tanggal valid
+          formattedCreatedAt = dateFromDb.toISOString();
         } else {
-          console.warn(
-            "Invalid created_at from DB for historical message:",
+          console.error(
+            "CRITICAL: Invalid created_at from DB for historical message (using fallback):",
             msg.created_at
           );
           formattedCreatedAt = new Date().toISOString(); // Fallback
         }
       } else {
-        console.warn("Missing created_at from DB for historical message.");
+        console.error(
+          "CRITICAL: Missing created_at from DB for historical message (using fallback)."
+        );
         formattedCreatedAt = new Date().toISOString(); // Fallback
       }
 
@@ -152,7 +158,7 @@ const getMessages = async (request, h) => {
         senderId: msg.sender_id,
         receiverId: msg.receiver_id,
         content: encryption.decrypt(msg.encrypted_content),
-        created_at: formattedCreatedAt, // Use the validated/formatted timestamp
+        created_at: formattedCreatedAt, // Gunakan timestamp yang sudah divalidasi/diforrmat
       };
     });
 
