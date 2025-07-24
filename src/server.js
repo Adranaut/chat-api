@@ -44,17 +44,11 @@ const init = async () => {
           .code(401);
       }
 
-      const channelParts = channelName.split("-");
-      // Periksa apakah channelName memiliki format yang diharapkan: "private-chat-{id1}_{id2}"
-      if (
-        channelParts[0] === "private" &&
-        channelParts[1] === "chat" &&
-        channelParts.length === 3
-      ) {
-        const idPair = channelParts[2]; // Ini akan menjadi string seperti "id1_id2"
-        const participantIds = idPair.split("_"); // Sekarang pisahkan dengan underscore
+      const channelPrefix = "private-chat-";
+      if (channelName.startsWith(channelPrefix)) {
+        const idPair = channelName.substring(channelPrefix.length); // Dapatkan bagian "id1_id2"
+        const participantIds = idPair.split("_"); // Pisahkan dengan underscore
 
-        // Pastikan ada dua ID partisipan setelah pemisahan
         if (participantIds.length === 2) {
           const participant1 = participantIds[0];
           const participant2 = participantIds[1];
