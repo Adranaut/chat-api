@@ -41,13 +41,13 @@ const sendMessage = async (request, h) => {
         senderId: newMessage.sender_id,
         receiverId: newMessage.receiver_id,
         content: decryptedContent,
-        createdAt: newMessage.created_at,
+        createdAt: newMessage.created_at, // Pastikan ini disertakan
       };
 
-      // --- PERBAIKAN DI SINI: Gunakan underscore untuk menggabungkan ID ---
+      // Gunakan underscore untuk menggabungkan ID agar tidak terpecah oleh UUID
       const channelName = `private-chat-${[senderId, receiverId]
         .sort()
-        .join("_")}`; // Menggunakan underscore
+        .join("_")}`;
       const eventName = "new-message";
 
       await pusher.trigger(channelName, eventName, messageData);
@@ -62,6 +62,7 @@ const sendMessage = async (request, h) => {
         message: "Message sent successfully",
         data: {
           messageId: newMessage.id,
+          createdAt: newMessage.created_at, // Pastikan ini disertakan dalam respons API
         },
       })
       .code(201);
@@ -78,7 +79,7 @@ const sendMessage = async (request, h) => {
 
 const getMessages = async (request, h) => {
   const { user1Id, user2Id } = request.params;
-  const { limit, offset } = request.query; // <--- TAMBAHAN UNTUK PAGINASI
+  const { limit, offset } = request.query;
 
   try {
     const user1Exists = await UserModel.findById(user1Id);
@@ -100,13 +101,12 @@ const getMessages = async (request, h) => {
         .code(404);
     }
 
-    // Panggil model dengan limit dan offset
     const { messages, total } = await MessageModel.getConversation(
       user1Id,
       user2Id,
       limit,
       offset
-    ); // <--- PERUBAHAN DI SINI
+    );
 
     const decryptedMessages = messages.map((msg) => ({
       id: msg.id,
@@ -122,7 +122,6 @@ const getMessages = async (request, h) => {
         data: {
           messages: decryptedMessages,
           pagination: {
-            // <--- TAMBAHAN UNTUK INFORMASI PAGINASI
             limit: parseInt(limit),
             offset: parseInt(offset),
             totalMessages: parseInt(total),
