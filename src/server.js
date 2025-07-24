@@ -35,7 +35,7 @@ const init = async () => {
       // --- AKHIR LOGGING TAMBAHAN ---
 
       if (!userId) {
-        console.log("  Reason: userId is missing (returning 401)."); // Log tambahan
+        console.log("  Reason: userId is missing (returning 401).");
         return h
           .response({
             status: "fail",
@@ -45,30 +45,61 @@ const init = async () => {
       }
 
       const channelParts = channelName.split("-");
-      if (channelParts[0] === "private" && channelParts[1] === "chat") {
-        const participant1 = channelParts[2];
-        const participant2 = channelParts[3];
+      // Periksa apakah channelName memiliki format yang diharapkan: "private-chat-{id1}_{id2}"
+      if (
+        channelParts[0] === "private" &&
+        channelParts[1] === "chat" &&
+        channelParts.length === 3
+      ) {
+        const idPair = channelParts[2]; // Ini akan menjadi string seperti "id1_id2"
+        const participantIds = idPair.split("_"); // Sekarang pisahkan dengan underscore
 
-        // --- LOGGING TAMBAHAN UNTUK DIAGNOSA ---
-        console.log("  Channel participants:", participant1, participant2);
-        console.log("  Logged in userId (from frontend):", userId);
-        // --- AKHIR LOGGING TAMBAHAN ---
+        // Pastikan ada dua ID partisipan setelah pemisahan
+        if (participantIds.length === 2) {
+          const participant1 = participantIds[0];
+          const participant2 = participantIds[1];
 
-        if (userId !== participant1 && userId !== participant2) {
+          // --- LOGGING TAMBAHAN UNTUK DIAGNOSA ---
           console.log(
-            "  Reason: userId does not match channel participants (returning 403)."
-          ); // Log tambahan
+            "  Channel participants (parsed):",
+            participant1,
+            participant2
+          );
+          console.log("  Logged in userId (from frontend):", userId);
+          // --- AKHIR LOGGING TAMBAHAN ---
+
+          if (userId !== participant1 && userId !== participant2) {
+            console.log(
+              "  Reason: userId does not match channel participants (returning 403)."
+            );
+            return h
+              .response({
+                status: "fail",
+                message: "Unauthorized to access this channel.",
+              })
+              .code(403);
+          }
+        } else {
+          console.log(
+            "  Reason: Invalid participant ID format in channel name (returning 403)."
+          );
           return h
             .response({
               status: "fail",
-              message: "Unauthorized to access this channel.",
+              message: "Invalid channel name format.",
             })
             .code(403);
         }
       } else {
-        console.log("  Reason: Unsupported channel type (returning 403)."); // Log tambahan
+        console.log(
+          "  Reason: Unsupported channel type or invalid channel name structure (returning 403)."
+        );
         return h
-          .response({ status: "fail", message: "Unsupported channel type." })
+          .response({
+            status: "fail",
+            message:
+              "Unsupported channel type or invalid channel name structure.",
+          })
           .code(403);
       }
 
@@ -76,11 +107,11 @@ const init = async () => {
         const authResponse = pusher.authorizeChannel(socketId, channelName, {
           user_id: userId,
         });
-        console.log("  Pusher authorization successful (returning 200)."); // Log tambahan
+        console.log("  Pusher authorization successful (returning 200).");
         return h.response(authResponse).code(200);
       } catch (error) {
         console.error("Pusher authentication error:", error);
-        console.log("  Reason: Pusher authorization failed (returning 500)."); // Log tambahan
+        console.log("  Reason: Pusher authorization failed (returning 500).");
         return h
           .response({
             status: "error",
