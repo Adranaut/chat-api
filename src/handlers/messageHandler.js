@@ -44,9 +44,10 @@ const sendMessage = async (request, h) => {
         createdAt: newMessage.created_at,
       };
 
+      // --- PERBAIKAN DI SINI: Gunakan underscore untuk menggabungkan ID ---
       const channelName = `private-chat-${[senderId, receiverId]
         .sort()
-        .join("-")}`;
+        .join("_")}`; // Menggunakan underscore
       const eventName = "new-message";
 
       await pusher.trigger(channelName, eventName, messageData);
