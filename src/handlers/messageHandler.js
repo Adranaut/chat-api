@@ -41,7 +41,8 @@ const sendMessage = async (request, h) => {
         senderId: newMessage.sender_id,
         receiverId: newMessage.receiver_id,
         content: decryptedContent,
-        createdAt: newMessage.created_at, // Pastikan ini disertakan
+        // Perbaikan: Pastikan createdAt selalu dalam format ISO string
+        createdAt: new Date(newMessage.created_at).toISOString(),
       };
 
       // Gunakan underscore untuk menggabungkan ID agar tidak terpecah oleh UUID
@@ -62,7 +63,8 @@ const sendMessage = async (request, h) => {
         message: "Message sent successfully",
         data: {
           messageId: newMessage.id,
-          createdAt: newMessage.created_at, // Pastikan ini disertakan dalam respons API
+          // Perbaikan: Pastikan createdAt selalu dalam format ISO string di respons API
+          createdAt: new Date(newMessage.created_at).toISOString(),
         },
       })
       .code(201);
@@ -113,7 +115,7 @@ const getMessages = async (request, h) => {
       senderId: msg.sender_id,
       receiverId: msg.receiver_id,
       content: encryption.decrypt(msg.encrypted_content),
-      created_at: msg.created_at,
+      created_at: new Date(msg.created_at).toISOString(), // Perbaikan: Pastikan juga untuk getMessages
     }));
 
     return h
