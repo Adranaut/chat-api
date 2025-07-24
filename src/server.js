@@ -25,10 +25,17 @@ const init = async () => {
     handler: async (request, h) => {
       const socketId = request.payload.socket_id;
       const channelName = request.payload.channel_name;
-      const userId = request.payload.userId; // <--- PASTIKAN INI DITERIMA DARI FRONTEND
+      const userId = request.payload.userId;
+
+      // --- LOGGING TAMBAHAN UNTUK DIAGNOSA ---
+      console.log("Pusher Auth Request:");
+      console.log("  socketId:", socketId);
+      console.log("  channelName:", channelName);
+      console.log("  userId:", userId);
+      // --- AKHIR LOGGING TAMBAHAN ---
 
       if (!userId) {
-        // Ini akan menyebabkan 401 jika userId tidak ada
+        console.log("  Reason: userId is missing (returning 401)."); // Log tambahan
         return h
           .response({
             status: "fail",
@@ -37,13 +44,20 @@ const init = async () => {
           .code(401);
       }
 
-      // Pastikan pengguna diizinkan untuk berlangganan saluran ini
       const channelParts = channelName.split("-");
       if (channelParts[0] === "private" && channelParts[1] === "chat") {
         const participant1 = channelParts[2];
         const participant2 = channelParts[3];
-        // Ini akan menyebabkan 403 jika userId tidak cocok
+
+        // --- LOGGING TAMBAHAN UNTUK DIAGNOSA ---
+        console.log("  Channel participants:", participant1, participant2);
+        console.log("  Logged in userId (from frontend):", userId);
+        // --- AKHIR LOGGING TAMBAHAN ---
+
         if (userId !== participant1 && userId !== participant2) {
+          console.log(
+            "  Reason: userId does not match channel participants (returning 403)."
+          ); // Log tambahan
           return h
             .response({
               status: "fail",
@@ -52,7 +66,7 @@ const init = async () => {
             .code(403);
         }
       } else {
-        // Ini akan menyebabkan 403 jika channel type tidak didukung
+        console.log("  Reason: Unsupported channel type (returning 403)."); // Log tambahan
         return h
           .response({ status: "fail", message: "Unsupported channel type." })
           .code(403);
@@ -62,9 +76,11 @@ const init = async () => {
         const authResponse = pusher.authorizeChannel(socketId, channelName, {
           user_id: userId,
         });
+        console.log("  Pusher authorization successful (returning 200)."); // Log tambahan
         return h.response(authResponse).code(200);
       } catch (error) {
         console.error("Pusher authentication error:", error);
+        console.log("  Reason: Pusher authorization failed (returning 500)."); // Log tambahan
         return h
           .response({
             status: "error",
