@@ -1,12 +1,11 @@
 const bcrypt = require("bcrypt");
 const UserModel = require("../models/userModel");
-// const Jwt = require('jsonwebtoken'); // Hapus import Jwt
 
 const registerUser = async (request, h) => {
   const { name, phone_number, email, password } = request.payload;
 
   try {
-    const existingUserByEmail = await UserModel.findByEmailForAuth(email); // Menggunakan findByEmailForAuth
+    const existingUserByEmail = await UserModel.findByEmailForAuth(email);
     if (existingUserByEmail) {
       return h
         .response({
@@ -62,7 +61,7 @@ const loginUser = async (request, h) => {
   const { email, password } = request.payload;
 
   try {
-    const user = await UserModel.findByEmailForAuth(email); // Menggunakan findByEmailForAuth
+    const user = await UserModel.findByEmailForAuth(email);
     if (!user) {
       return h
         .response({
@@ -82,11 +81,6 @@ const loginUser = async (request, h) => {
         .code(401);
     }
 
-    // --- HAPUS BAGIAN PEMBUATAN TOKEN JWT ---
-    // const tokenPayload = { ... };
-    // const token = Jwt.sign(...);
-
-    // Mengembalikan detail user langsung (tanpa token)
     return h
       .response({
         status: "success",
@@ -95,7 +89,7 @@ const loginUser = async (request, h) => {
           userId: user.id,
           name: user.name,
           email: user.email,
-          phone_number: user.phone_number, // Sertakan phone_number juga
+          phone_number: user.phone_number,
         },
       })
       .code(200);
@@ -111,13 +105,10 @@ const loginUser = async (request, h) => {
 };
 
 const getUserProfile = async (request, h) => {
-  // Dengan tidak adanya JWT, kita TIDAK BISA mendapatkan ID/Email dari token.
-  // Anda harus mengirimkan ID user di path parameter atau query parameter.
-  // Asumsi: Kita akan mengambil ID dari path params.
-  const { userId } = request.params; // Ambil ID dari path params, misal /users/profile/some-id
+  const { userId } = request.params;
 
   try {
-    const user = await UserModel.findById(userId); // Menggunakan findById
+    const user = await UserModel.findById(userId);
 
     if (!user) {
       return h
@@ -154,9 +145,7 @@ const getUserProfile = async (request, h) => {
 };
 
 const updateUserName = async (request, h) => {
-  // Dengan tidak adanya JWT, Anda harus mengirim ID user yang akan diupdate
-  // Asumsi: ID user ada di path params
-  const { userId } = request.params; // Ambil ID dari path params, misal /users/name/some-id
+  const { userId } = request.params;
   const { name } = request.payload;
 
   try {
@@ -201,9 +190,73 @@ const updateUserName = async (request, h) => {
   }
 };
 
+// --- FUNGSI BARU DITAMBAHKAN DI SINI ---
+const getAllUsers = async (request, h) => {
+  try {
+    const users = await UserModel.getAllUsers();
+    const publicUsers = users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      phone_number: user.phone_number,
+      email: user.email,
+    }));
+    return h
+      .response({
+        status: "success",
+        data: { users: publicUsers },
+      })
+      .code(200);
+  } catch (error) {
+    console.error("Error getting all users:", error);
+    return h
+      .response({
+        status: "error",
+        message: "Failed to retrieve users.",
+      })
+      .code(500);
+  }
+};
+
+const findUserByPhoneNumber = async (request, h) => {
+  const { phoneNumber } = request.query;
+
+  if (!phoneNumber) {
+    return h
+      .response({ status: "fail", message: "Phone number is required." })
+      .code(400);
+  }
+
+  try {
+    const user = await UserModel.findByPhoneNumber(phoneNumber);
+    if (!user) {
+      return h
+        .response({ status: "fail", message: "User not found." })
+        .code(404);
+    }
+    return h
+      .response({
+        status: "success",
+        data: {
+          id: user.id,
+          name: user.name,
+          phone_number: user.phone_number,
+          email: user.email,
+        },
+      })
+      .code(200);
+  } catch (error) {
+    console.error("Error finding user by phone number:", error);
+    return h
+      .response({ status: "error", message: "Failed to find user." })
+      .code(500);
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
   updateUserName,
+  getAllUsers,
+  findUserByPhoneNumber,
 };

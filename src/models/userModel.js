@@ -50,11 +50,34 @@ class UserModel {
 
   static async updateName(id, newName) {
     try {
-      const query = `UPDATE users SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id`;
+      const query = `UPDATE users SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETATING id`;
       const result = await db.query(query, [newName, id]);
       return result.rowCount > 0;
     } catch (error) {
       console.error("Error updating user name:", error);
+      throw error;
+    }
+  }
+
+  // --- FUNGSI BARU DITAMBAHKAN DI SINI ---
+  static async findByPhoneNumber(phoneNumber) {
+    try {
+      const query = `SELECT id, name, phone_number, email FROM users WHERE phone_number = $1`;
+      const result = await db.query(query, [phoneNumber]);
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error("Error finding user by phone number:", error);
+      throw error;
+    }
+  }
+
+  static async getAllUsers() {
+    try {
+      const query = `SELECT id, name, phone_number, email FROM users ORDER BY name ASC`;
+      const result = await db.query(query);
+      return result.rows;
+    } catch (error) {
+      console.error("Error fetching all users:", error);
       throw error;
     }
   }

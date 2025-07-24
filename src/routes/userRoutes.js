@@ -7,7 +7,6 @@ const userRoutes = [
     path: "/users/register",
     handler: userHandler.registerUser,
     options: {
-      // auth: false, // Tidak perlu lagi karena tidak ada auth default
       validate: {
         payload: Joi.object({
           name: Joi.string().min(3).max(255).required(),
@@ -25,7 +24,6 @@ const userRoutes = [
     path: "/users/login",
     handler: userHandler.loginUser,
     options: {
-      // auth: false,
       validate: {
         payload: Joi.object({
           email: Joi.string().email().required(),
@@ -36,31 +34,53 @@ const userRoutes = [
   },
   {
     method: "GET",
-    path: "/users/profile/{userId}", // <--- PERUBAHAN DI SINI: tambahkan path parameter userId
+    path: "/users/profile/{userId}",
     handler: userHandler.getUserProfile,
     options: {
-      // auth: 'jwt', // HAPUS OPSI AUTH INI
       validate: {
         params: Joi.object({
-          userId: Joi.string().required(), // Validasi path parameter
+          userId: Joi.string().required(),
         }),
       },
     },
   },
   {
     method: "PUT",
-    path: "/users/name/{userId}", // <--- PERUBAHAN DI SINI: tambahkan path parameter userId
+    path: "/users/name/{userId}",
     handler: userHandler.updateUserName,
     options: {
-      // auth: 'jwt', // HAPUS OPSI AUTH INI
       validate: {
         params: Joi.object({
-          userId: Joi.string().required(), // Validasi path parameter
+          userId: Joi.string().required(),
         }),
         payload: Joi.object({
           name: Joi.string().min(3).max(255).required(),
         }),
       },
+    },
+  },
+  // --- RUTE BARU DITAMBAHKAN DI SINI ---
+  {
+    method: "GET",
+    path: "/users",
+    handler: userHandler.getAllUsers,
+    options: {
+      auth: false,
+    },
+  },
+  {
+    method: "GET",
+    path: "/users/search",
+    handler: userHandler.findUserByPhoneNumber,
+    options: {
+      validate: {
+        query: Joi.object({
+          phoneNumber: Joi.string()
+            .pattern(/^\+?[0-9]{10,15}$/)
+            .required(),
+        }),
+      },
+      auth: false,
     },
   },
 ];
