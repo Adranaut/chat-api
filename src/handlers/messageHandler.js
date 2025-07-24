@@ -34,6 +34,26 @@ const sendMessage = async (request, h) => {
       encryptedContent
     );
 
+    let formattedCreatedAt = null;
+    if (newMessage && newMessage.created_at) {
+      const dateObj = new Date(newMessage.created_at);
+      if (!isNaN(dateObj.getTime())) {
+        // Check if date is valid
+        formattedCreatedAt = dateObj.toISOString();
+      } else {
+        // Fallback if created_at from DB is somehow invalid
+        console.warn(
+          "Invalid created_at from DB for new message:",
+          newMessage.created_at
+        );
+        formattedCreatedAt = new Date().toISOString(); // Use current time as fallback
+      }
+    } else {
+      // Fallback if created_at is missing from DB response
+      console.warn("Missing created_at from DB for new message.");
+      formattedCreatedAt = new Date().toISOString(); // Use current time as fallback
+    }
+
     if (newMessage) {
       const decryptedContent = encryption.decrypt(newMessage.encrypted_content);
       const messageData = {
@@ -41,8 +61,7 @@ const sendMessage = async (request, h) => {
         senderId: newMessage.sender_id,
         receiverId: newMessage.receiver_id,
         content: decryptedContent,
-        // Perbaikan: Pastikan createdAt selalu dalam format ISO string
-        createdAt: new Date(newMessage.created_at).toISOString(),
+        createdAt: formattedCreatedAt, // Use the validated/formatted timestamp
       };
 
       // Gunakan underscore untuk menggabungkan ID agar tidak terpecah oleh UUID
@@ -63,8 +82,7 @@ const sendMessage = async (request, h) => {
         message: "Message sent successfully",
         data: {
           messageId: newMessage.id,
-          // Perbaikan: Pastikan createdAt selalu dalam format ISO string di respons API
-          createdAt: new Date(newMessage.created_at).toISOString(),
+          createdAt: formattedCreatedAt, // Use the validated/formatted timestamp in API response
         },
       })
       .code(201);
@@ -110,13 +128,33 @@ const getMessages = async (request, h) => {
       offset
     );
 
-    const decryptedMessages = messages.map((msg) => ({
-      id: msg.id,
-      senderId: msg.sender_id,
-      receiverId: msg.receiver_id,
-      content: encryption.decrypt(msg.encrypted_content),
-      created_at: new Date(msg.created_at).toISOString(), // Perbaikan: Pastikan juga untuk getMessages
-    }));
+    const decryptedMessages = messages.map((msg) => {
+      let formattedCreatedAt = null;
+      if (msg.created_at) {
+        const dateObj = new Date(msg.created_at);
+        if (!isNaN(dateObj.getTime())) {
+          // Check if date is valid
+          formattedCreatedAt = dateObj.toISOString();
+        } else {
+          console.warn(
+            "Invalid created_at from DB for historical message:",
+            msg.created_at
+          );
+          formattedCreatedAt = new Date().toISOString(); // Fallback
+        }
+      } else {
+        console.warn("Missing created_at from DB for historical message.");
+        formattedCreatedAt = new Date().toISOString(); // Fallback
+      }
+
+      return {
+        id: msg.id,
+        senderId: msg.sender_id,
+        receiverId: msg.receiver_id,
+        content: encryption.decrypt(msg.encrypted_content),
+        created_at: formattedCreatedAt, // Use the validated/formatted timestamp
+      };
+    });
 
     return h
       .response({
